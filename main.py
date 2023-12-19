@@ -1,9 +1,10 @@
 import sys
 import sqlite3
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow,
+    QApplication, QMainWindow, QDialog,
+    QVBoxLayout, QComboBox,
     QTableWidget, QTableWidgetItem,
-    QLabel,
+    QLineEdit, QPushButton
 )
 from PyQt6.QtGui import QAction
 
@@ -16,6 +17,7 @@ class MainWindow(QMainWindow):
         help_menu_item = self.menuBar().addMenu("Help")
 
         add_record_action = QAction("Add record", self)
+        add_record_action.triggered.connect(self.insert_record)
         file_menu_item.addAction(add_record_action)
 
         about_action = QAction("About", self)
@@ -42,6 +44,51 @@ class MainWindow(QMainWindow):
                 ))
         connection.close()
         
+    def insert_record(self):
+        dialog = InsertDialog()
+        dialog.exec()
+
+
+class InsertDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Add a new record")
+        self.setFixedHeight(300)
+        self.setFixedWidth(300)
+
+        layout = QVBoxLayout()
+
+        self.student_name = QLineEdit()
+        self.student_name.setPlaceholderText("Student name")
+        
+        self.course = QComboBox()
+        courses = ['Biology', "Math", "Astronomy", "Physics"]
+        self.course.addItems(courses)
+
+        self.phone = QLineEdit()
+        self.phone.setPlaceholderText("Phone number")
+
+        btn = QPushButton("Register")
+        btn.clicked.connect(self.add_record)
+
+        layout.addWidget(self.student_name)
+        layout.addWidget(self.course)
+        layout.addWidget(self.phone)
+        layout.addWidget(btn)
+        self.setLayout(layout)
+    
+    def add_record(self):
+        name = self.student_name.text()
+        course = self.course.itemText(self.course.currentIndex())
+        phone = self.phone.text()
+
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        sql_query = "INSERT INTO students (name, course, mobile) VALUES (?, ?, ?)"
+        cursor.execute(sql_query, (name, course, phone))
+        connection.commit()
+        cursor.close()
+        connection.close()
 
 app = QApplication(sys.argv)
 app_window = MainWindow()
